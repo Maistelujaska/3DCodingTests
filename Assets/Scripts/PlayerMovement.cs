@@ -22,13 +22,12 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded;
     
 
-    Rigidbody rb;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
+        rigidbodyComponent = GetComponent<Rigidbody>();
+        rigidbodyComponent.freezeRotation = true;
     }
 
     private void MyInput()
@@ -44,7 +43,7 @@ public class PlayerMovement : MonoBehaviour
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
         MyInput();
         if (grounded)
-            rb.linearDamping = groundDrag;
+            rigidbodyComponent.linearDamping = groundDrag;
 
         SpeedControl();
 
@@ -57,6 +56,11 @@ public class PlayerMovement : MonoBehaviour
 
     public void FixedUpdate()
     {
+        if (isGrounded == false)
+        {
+            return;
+        }
+
         MovePlayer();
 
         if (jumpKeyWasPressed)
@@ -64,11 +68,17 @@ public class PlayerMovement : MonoBehaviour
             rigidbodyComponent.AddForce(Vector3.up * 5, ForceMode.VelocityChange);
             jumpKeyWasPressed = false;
         }
+        rigidbodyComponent.linearVelocity = new Vector3(horizontalInput, rigidbodyComponent.linearVelocity.y, 0);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        
+        isGrounded = true;
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        isGrounded = false;
     }
 
     private void MovePlayer()
@@ -76,22 +86,22 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
         if (grounded)
         {
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+            rigidbodyComponent.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
         }
         else if (!grounded)
         {
-            rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
+            rigidbodyComponent.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
         }
             
     }
 
     private void SpeedControl()
     {
-        Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        Vector3 flatVel = new Vector3(rigidbodyComponent.linearVelocity.x, 0f, rigidbodyComponent.linearVelocity.z);
         if(flatVel.magnitude > moveSpeed)
         {
             Vector3 limitedVel = flatVel.normalized * moveSpeed;
-            rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
+            rigidbodyComponent.linearVelocity = new Vector3(limitedVel.x, rigidbodyComponent.linearVelocity.y, limitedVel.z);
         }
     }
 
